@@ -1,25 +1,31 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependency manifests
-COPY package.json package-lock.json ./
+COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies and generate Prisma Client
 RUN npm install
 
-# Copy application source code
 COPY tsconfig.json ./
 COPY src ./src/
 
-# Generate Prisma client and compile TypeScript to dist/
 RUN npx prisma generate
 RUN npm run build
+RUN npm prune --omit=dev
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=development
+ENV PORT=3000
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
-
-ENV PORT=3000
-ENV NODE_ENV=development
 
 CMD ["node", "dist/server.js"]
