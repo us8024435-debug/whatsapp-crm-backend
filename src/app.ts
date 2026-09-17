@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { requestLogger } from "./middleware/request-logger";
 import { errorHandler } from "./middleware/error-handler";
 import { healthRouter } from "./modules/health/health.routes";
@@ -10,6 +11,18 @@ import { demoRouter } from "./modules/demo/demo.routes";
 export const app = express();
 
 // ── Middleware ──────────────────────────────────────────
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://your-frontend-url.onrender.com",
+      ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+    ],
+    methods: ["GET", "POST", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
+  })
+);
+
 app.use(requestLogger);
 
 // JSON body parser for API routes (webhook route uses raw body separately)
