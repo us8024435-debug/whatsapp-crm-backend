@@ -52,6 +52,11 @@ export default function App() {
       setIsLoading(true);
       setError(null);
 
+      // Re-verify backend health status
+      checkBackendHealth()
+        .then((res) => setBackendHealthy(res.ok))
+        .catch(() => setBackendHealthy(false));
+
       try {
         const fetched = await fetchLeads(activeKey);
         setLeads(fetched);
