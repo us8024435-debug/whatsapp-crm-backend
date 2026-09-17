@@ -16,6 +16,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://your-frontend-url.onrender.com",
+      /\.vercel\.app$/,
       ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
     ],
     methods: ["GET", "POST", "PATCH", "OPTIONS"],
