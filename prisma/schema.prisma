@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Contact ───────────────────────────────────────────
+// A real person/customer identified by WhatsApp phone number.
+model Contact {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String?
+  source    String   @default("whatsapp")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads    Lead[]
+  messages Message[]
+
+  @@index([createdAt])
+}
+
+// ─── Lead ──────────────────────────────────────────────
+// A sales or support opportunity linked to a contact.
+model Lead {
+  id        String   @id @default(cuid())
+  contactId String
+  status    String   @default("new")
+  source    String   @default("whatsapp")
+  title     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contact Contact @relation(fields: [contactId], references: [id])
+
+  @@index([status])
+  @@index([contactId])
+  @@index([createdAt])
+}
+
+// ─── Message ───────────────────────────────────────────
+// An inbound or outbound WhatsApp message.
+model Message {
+  id                String   @id @default(cuid())
+  providerMessageId String?  @unique
+  contactId         String
+  direction         String   // "inbound" | "outbound"
+  type              String   // "text" | "image" | "audio" | etc.
+  text              String?
+  status            String?  // "received" | "sent" | "delivered" | "read" | "failed"
+  rawPayload        Json?
+  createdAt         DateTime @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id])
+
+  @@index([contactId])
+  @@index([createdAt])
+}
+
+// ─── WebhookEvent ──────────────────────────────────────
+// Raw webhook payload stored for audit, debugging, and replay.
+model WebhookEvent {
+  id              String    @id @default(cuid())
+  providerEventId String?   @unique
+  source          String    // "whatsapp"
+  eventType       String?
+  payload         Json
+  processedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([createdAt])
+}
